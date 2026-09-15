@@ -66,6 +66,7 @@ setting to pick. One sheet of paper, once in your life, and you never guess agai
 | **Rotation** | 0°, 90°, 180°, 270°, each landing on precisely the footprint you drew. |
 | **Position presets** | Top half, bottom half, quadrants, centre, full page, and fit-to-aspect-ratio. |
 | **Alignment test sheet** | Stamps a labelled 10 mm grid on your page so you can read the right coordinates straight off the paper. |
+| **Saved positions** | Printing the same form every month? Save the position once and load it next time instead of placing it again. It's a small file, so you can email it to whoever else prints that form. If you load it onto a different page size, Reprint says so instead of quietly putting your content in the wrong place. |
 | **Printer offset** | One global nudge in tenths of a millimetre to correct a printer that feeds slightly off. |
 | **Multi-page** | Copy one placement to every page, or map content page *n* onto base page *n*. |
 | **Accepts** | PDF, PNG or JPEG as the added content. |
@@ -128,8 +129,6 @@ pull requests very welcome.
 
 **Good first issues**
 
-- [#1 Save and reload placement presets](https://github.com/Malikasadjaved/reprint/issues/1) — most
-  people reprint the *same* form every month; a preset turns six steps into two.
 - [#2 Accept files by drag-and-drop](https://github.com/Malikasadjaved/reprint/issues/2)
 - [#3 Snap the box to page edges and margins](https://github.com/Malikasadjaved/reprint/issues/3)
 - [#4 Undo and redo](https://github.com/Malikasadjaved/reprint/issues/4)

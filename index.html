@@ -175,6 +175,14 @@ details p,details li{font-size:13px;color:var(--muted)}
         <button id="applyAll">Copy to all pages</button>
         <button id="seq">Sequential pages</button>
       </div>
+      <div class="row" style="margin-top:8px">
+        <button id="savePreset">Save this position</button>
+        <button id="loadPreset">Load a saved position</button>
+        <input type="file" id="presetFile" accept=".json,application/json" class="hidden">
+      </div>
+      <p class="note" id="presetNote">Printing the same form every month? Save the position once and
+         load it next time instead of placing it again. The file is small enough to email to a
+         colleague.</p>
       <p class="note">"Sequential" maps content page 1 &rarr; base page 1, 2 &rarr; 2, and so on,
          reusing this box position.</p>
     </div>
@@ -313,7 +321,7 @@ const $ = id => document.getElementById(id);
 const state = {
   baseBytes:null, baseDoc:null, basePages:0, pageSizes:[], pageRot:[],
   ovBytes:null, ovDoc:null, ovPages:0, ovKind:null, ovSizes:[], ovRender:[],
-  cur:0, placements:[], scale:1, candidates:null
+  cur:0, placements:[], scale:1, candidates:null, baseName:""
 };
 
 /* ---------------------------- loading ---------------------------- */
@@ -321,6 +329,7 @@ const state = {
 $("baseFile").addEventListener("change", async e => {
   const f = e.target.files[0]; if (!f) return;
   state.baseBytes = new Uint8Array(await f.arrayBuffer());
+  state.baseName = f.name.replace(/\.pdf$/i, "");
   state.baseDoc = await pdfjsLib.getDocument({ data: state.baseBytes.slice() }).promise;
   state.basePages = state.baseDoc.numPages;
   state.pageSizes = []; state.pageRot = [];
@@ -738,6 +747,90 @@ $("seq").addEventListener("click", () => {
 });
 function status(t){ $("status").textContent = t; }
 
+/* ---------------------------- saved positions ----------------------------
+
+   The same form comes round every month. A preset is a small JSON file rather
+   than browser storage, so it survives a cleared cache, moves between machines
+   and can be emailed to whoever else prints the form.                        */
+
+const PRESET_SIG = "reprint-placement";
+
+$("savePreset").addEventListener("click", () => {
+  const p = P(), s = state.pageSizes[state.cur];
+  if (!p || !s) { presetNote("Load a page and place the box first."); return; }
+  const preset = {
+    app: PRESET_SIG,
+    version: 1,
+    name: (state.baseName || "placement"),
+    savedOn: new Date().toISOString().slice(0, 10),
+    // the page this was measured against, so a mismatch can be reported rather than ignored
+    pageSize: { width: s.w, height: s.h },
+    placement: { x: p.x, y: p.y, width: p.w, height: p.h, rotation: p.rot },
+    printerOffset: { x: +$("offx").value || 0, y: +$("offy").value || 0 },
+    note: "Reprint saved position. Millimetres from the bottom-left corner of the page: " +
+          "x " + pt2mm(p.x).toFixed(1) + ", y " + pt2mm(p.y).toFixed(1) +
+          ", " + pt2mm(p.w).toFixed(1) + " wide, " + pt2mm(p.h).toFixed(1) + " tall."
+  };
+  download(JSON.stringify(preset, null, 2),
+           (state.baseName || "reprint") + ".position.json", "application/json");
+  presetNote("Saved. Keep the file somewhere you'll find it next month.");
+});
+
+$("loadPreset").addEventListener("click", () => $("presetFile").click());
+
+$("presetFile").addEventListener("change", async e => {
+  const f = e.target.files[0]; if (!f) return;
+  e.target.value = "";                       // so the same file can be picked twice
+  let j;
+  try { j = JSON.parse(await f.text()); }
+  catch (_) { presetNote("That file isn't a saved position — it couldn't be read at all."); return; }
+  try {
+    if (j === null || typeof j !== "object" || j.app !== PRESET_SIG) {
+      presetNote("That isn't a Reprint position file."); return;
+    }
+
+    const q = j.placement || {};
+    const num = v => typeof v === "number" && isFinite(v);
+    if (!num(q.x) || !num(q.y) || !(q.width > 0) || !(q.height > 0)) {
+      presetNote("That position file is damaged — the numbers in it don't make sense."); return;
+    }
+
+    const p = P(), s = state.pageSizes[state.cur];
+    if (!p || !s) { presetNote("Load both files first, then load the position."); return; }
+
+    p.x = q.x; p.y = q.y; p.w = q.width; p.h = q.height;
+    p.rot = [0, 90, 180, 270].indexOf(q.rotation) > -1 ? q.rotation : 0;
+    p.on = true;
+    if (j.printerOffset && num(j.printerOffset.x) && num(j.printerOffset.y)) {
+      $("offx").value = j.printerOffset.x;
+      $("offy").value = j.printerOffset.y;
+    }
+    syncFields(); drawBox();
+
+    // Warn rather than silently placing the box somewhere it doesn't belong.
+    const msgs = [];
+    const was = j.pageSize;
+    if (was && (Math.abs(was.width - s.w) > 1 || Math.abs(was.height - s.h) > 1)) {
+      msgs.push("This position was saved for a " + pt2mm(was.width).toFixed(0) + " × " +
+                pt2mm(was.height).toFixed(0) + " mm page, but this page is " +
+                pt2mm(s.w).toFixed(0) + " × " + pt2mm(s.h).toFixed(0) +
+                " mm. Check it before printing.");
+    }
+    if (p.x + p.w < 0 || p.y + p.h < 0 || p.x > s.w || p.y > s.h) {
+      msgs.push("It lands completely off this page.");
+    } else if (p.x < 0 || p.y < 0 || p.x + p.w > s.w || p.y + p.h > s.h) {
+      msgs.push("Part of it hangs off the edge of this page.");
+    }
+    presetNote(msgs.length ? "⚠ " + msgs.join(" ")
+                           : "Position loaded" + (j.name ? " from “" + j.name + "”." : "."));
+  } catch (err) {
+    presetNote("Something went wrong loading that position file.");
+    console.error(err);
+  }
+});
+
+function presetNote(t){ $("presetNote").textContent = t; }
+
 /* ---------------------------- export ---------------------------- */
 
 // drawPage/drawImage rotate about (x,y); shift the anchor so the footprint stays put.
@@ -805,8 +898,8 @@ $("ruler").addEventListener("click", async () => {
   } catch (err) { status("Failed: " + err.message); console.error(err); }
 });
 
-function download(bytes, name){
-  const url = URL.createObjectURL(new Blob([bytes], { type: "application/pdf" }));
+function download(bytes, name, type){
+  const url = URL.createObjectURL(new Blob([bytes], { type: type || "application/pdf" }));
   const a = document.createElement("a");
   a.href = url; a.download = name; a.click();
   setTimeout(() => URL.revokeObjectURL(url), 4000);
