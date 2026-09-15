@@ -156,6 +156,9 @@ details p,details li{font-size:13px;color:var(--muted)}
         <div><label for="fopacity">Preview opacity</label>
           <input type="number" id="fopacity" min="10" max="100" step="5" value="100"></div>
       </div>
+      <button id="findBlank" style="width:100%;margin-top:12px">Find the blank area for me</button>
+      <p class="note" id="blankNote">Reprint looks at the page, finds the empty space and drops your
+         content into it. Click again to cycle through the other empty areas it found.</p>
       <div class="presets">
         <button data-p="top">Top half</button>
         <button data-p="bottom">Bottom half</button>
@@ -310,7 +313,7 @@ const $ = id => document.getElementById(id);
 const state = {
   baseBytes:null, baseDoc:null, basePages:0, pageSizes:[], pageRot:[],
   ovBytes:null, ovDoc:null, ovPages:0, ovKind:null, ovSizes:[], ovRender:[],
-  cur:0, placements:[], scale:1
+  cur:0, placements:[], scale:1, candidates:null
 };
 
 /* ---------------------------- loading ---------------------------- */
@@ -414,6 +417,20 @@ function drawGrid(){
   const w = size.w * state.scale, h = size.h * state.scale;
   g.width = w; g.height = h; g.style.width = w + "px"; g.style.height = h + "px";
   const ctx = g.getContext("2d"); ctx.clearRect(0, 0, w, h);
+
+  // detected empty areas, so you can see what Reprint found and what it skipped
+  const cand = state.candidates;
+  if (cand && cand.page === state.cur && cand.list.length) {
+    ctx.setLineDash([5, 4]); ctx.lineWidth = 1;
+    cand.list.forEach((a, i) => {
+      const chosen = i === cand.i;
+      ctx.strokeStyle = chosen ? "rgba(220,120,40,.95)" : "rgba(220,120,40,.35)";
+      ctx.strokeRect(a.x * state.scale, (size.h - a.y - a.h) * state.scale,
+                     a.w * state.scale, a.h * state.scale);
+    });
+    ctx.setLineDash([]);
+  }
+
   if (!$("showGrid").checked) return;
   ctx.strokeStyle = "rgba(90,140,200,.45)"; ctx.lineWidth = .5;
   for (let x = 0; x <= pt2mm(size.w); x += 10) {
@@ -425,6 +442,144 @@ function drawGrid(){
     ctx.beginPath(); ctx.moveTo(0, py); ctx.lineTo(w, py); ctx.stroke();
   }
 }
+
+/* ---------------------------- blank-area detection ----------------------------
+
+   The rendered page is reduced to a coarse grid of "has ink / is empty" cells,
+   then the largest all-empty rectangle is found with the standard
+   largest-rectangle-in-a-histogram sweep (O(cells), one pass per candidate).
+   Background colour is whatever colour the page uses most, so this works on
+   cream forms, coloured letterhead and scans, not just white paper.          */
+
+const INSET_MM = 2;        // keep content off the existing ink
+const MIN_SIDE_MM = 12;    // ignore slivers between lines of text
+const MAX_CANDIDATES = 6;
+
+function inkGrid(){
+  const c = $("baseCanvas");
+  const W = c.width, H = c.height;
+  if (!W || !H) return null;
+  let img;
+  try { img = c.getContext("2d", { willReadFrequently: true }).getImageData(0, 0, W, H).data; }
+  catch (_) { return null; }
+
+  // modal colour = the page's background, quantised to 4 bits per channel
+  const hist = new Map();
+  for (let i = 0; i < img.length; i += 28) {          // sample every 7th pixel
+    const k = ((img[i] >> 4) << 8) | ((img[i + 1] >> 4) << 4) | (img[i + 2] >> 4);
+    hist.set(k, (hist.get(k) || 0) + 1);
+  }
+  let bk = 0, bv = -1;
+  hist.forEach((v, k) => { if (v > bv) { bv = v; bk = k; } });
+  const bg = [((bk >> 8) & 15) * 17, ((bk >> 4) & 15) * 17, (bk & 15) * 17];
+
+  const cell = Math.max(2, Math.round(W / 320));
+  const cols = Math.floor(W / cell), rows = Math.floor(H / cell);
+  const ink = new Uint8Array(cols * rows);
+  let inked = 0;
+  for (let gy = 0; gy < rows; gy++) {
+    for (let gx = 0; gx < cols; gx++) {
+      let n = 0;
+      for (let y = gy * cell, ye = y + cell; y < ye && n < 2; y++) {
+        for (let x = gx * cell, xe = x + cell; x < xe; x++) {
+          const i = (y * W + x) * 4;
+          if (img[i + 3] < 200) continue;             // transparent counts as empty
+          if (Math.abs(img[i] - bg[0]) + Math.abs(img[i + 1] - bg[1]) +
+              Math.abs(img[i + 2] - bg[2]) > 90) { if (++n >= 2) break; }
+        }
+      }
+      if (n >= 2) { ink[gy * cols + gx] = 1; inked++; }  // 1 stray pixel = speckle, ignore
+    }
+  }
+  return { ink, cols, rows, cell, inked };
+}
+
+function largestRect(ink, cols, rows){
+  const h = new Int32Array(cols);
+  const at = i => (i < cols ? h[i] : 0);
+  let best = null;
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) h[x] = ink[y * cols + x] ? 0 : h[x] + 1;
+    const st = [];
+    for (let x = 0; x <= cols; x++) {
+      const cur = at(x);
+      while (st.length && at(st[st.length - 1]) >= cur) {
+        const ht = h[st.pop()];
+        const left = st.length ? st[st.length - 1] + 1 : 0;
+        const area = (x - left) * ht;
+        if (ht > 0 && (!best || area > best.area))
+          best = { area, x0: left, x1: x - 1, y0: y - ht + 1, y1: y };
+      }
+      st.push(x);
+    }
+  }
+  return best;
+}
+
+function findBlankAreas(){
+  const g = inkGrid();
+  if (!g) return { list: [], inked: 0 };
+  const size = state.pageSizes[state.cur];
+  const k = $("baseCanvas").width / size.w;          // canvas pixels per PDF point
+  const minSide = mm2pt(MIN_SIDE_MM);
+  const ins = mm2pt(INSET_MM);
+  const out = [];
+  const work = g.ink.slice();
+  for (let n = 0; n < MAX_CANDIDATES * 3 && out.length < MAX_CANDIDATES; n++) {
+    const r = largestRect(work, g.cols, g.rows);
+    if (!r) break;
+    for (let y = r.y0; y <= r.y1; y++)              // claim it either way, then look again
+      for (let x = r.x0; x <= r.x1; x++) work[y * g.cols + x] = 1;
+
+    // grid -> canvas pixels -> PDF points, origin bottom-left
+    const px0 = r.x0 * g.cell, px1 = (r.x1 + 1) * g.cell;
+    const py0 = r.y0 * g.cell, py1 = (r.y1 + 1) * g.cell;
+    const box = {
+      x: px0 / k + ins,
+      y: size.h - py1 / k + ins,
+      w: (px1 - px0) / k - 2 * ins,
+      h: (py1 - py0) / k - 2 * ins
+    };
+    // judge the area you actually get, after the safety inset — not the raw rectangle
+    if (box.w >= minSide && box.h >= minSide) out.push(box);
+  }
+  return { list: out, inked: g.inked };
+}
+
+$("findBlank").addEventListener("click", () => {
+  const p = P(), size = state.pageSizes[state.cur];
+  if (!p || !size) { $("blankNote").textContent = "Load both files first."; return; }
+  if (!state.candidates || state.candidates.page !== state.cur) {
+    const r = findBlankAreas();
+    if (!r.inked) {          // nothing cached: the page may simply still be drawing
+      $("blankNote").textContent = "This page has nothing on it, so the whole page is free. " +
+        "If it is still drawing, give it a moment and click again.";
+      return;
+    }
+    state.candidates = { page: state.cur, list: r.list, i: -1 };
+  }
+  const list = state.candidates.list;
+  if (!list.length) {
+    $("blankNote").textContent = "No clear empty area found on this page — place the box by hand.";
+    drawGrid(); return;
+  }
+  state.candidates.i = (state.candidates.i + 1) % list.length;
+  const a = list[state.candidates.i];
+
+  // fit the content's own proportions inside the empty area, centred
+  const ov = state.ovSizes[p.ovPage] || { w: a.w, h: a.h };
+  const s = Math.min(a.w / ov.w, a.h / ov.h);
+  p.w = ov.w * s; p.h = ov.h * s;
+  p.x = a.x + (a.w - p.w) / 2;
+  p.y = a.y + (a.h - p.h) / 2;
+  p.on = true; p.rot = 0;
+
+  $("blankNote").textContent =
+    "Empty area " + (state.candidates.i + 1) + " of " + list.length + " — " +
+    pt2mm(a.w).toFixed(0) + " × " + pt2mm(a.h).toFixed(0) + " mm. " +
+    (list.length > 1 ? "Click again for the next one." : "");
+  syncFields(); drawGrid(); drawBox();
+});
 
 /* ---------------------------- placement model ---------------------------- */
 

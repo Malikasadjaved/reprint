@@ -29,8 +29,9 @@ document into correctly ordered front and back files for manual double-siding.
 1. Open `index.html` — double-click it, and it opens in your normal web browser.
 2. Click the first **Choose File** button and pick the page you already print.
 3. Click the second one and pick the thing you want to add.
-4. You'll see your page with a green box on it. **Drag the box to the empty space** where the new
-   content should go. Drag a corner to make it bigger or smaller.
+4. Click **Find the blank area for me**. Reprint looks at the page and puts your content in the
+   empty space by itself. If you'd rather choose, drag the green box where you want it, or click the
+   button again to jump to the next empty area.
 5. Click **Download merged PDF**.
 6. Print that file. Everything is on the page in one go. No re-feeding.
 
@@ -59,6 +60,7 @@ setting to pick. One sheet of paper, once in your life, and you never guess agai
 
 | | |
 |---|---|
+| **Automatic blank-area detection** | One click: Reprint reads the page, finds the empty space and drops your content into it, scaled to fit and centred. Click again to cycle through the other empty areas it found — each one outlined on the preview. |
 | **Drag-and-drop placement** | Drag the box, or type exact millimetres. Corner handles resize; hold Shift to keep the shape. |
 | **Exact coordinates** | X, Y, width and height in millimetres, measured from the bottom-left corner — the same origin PDF itself uses. |
 | **Rotation** | 0°, 90°, 180°, 270°, each landing on precisely the footprint you drew. |
@@ -136,8 +138,6 @@ very welcome — pick any one.
 
 **High value, more effort**
 
-- **Automatic blank-area detection.** Scan the base page for the largest empty rectangle and put the
-  box there on its own. This is the single biggest usability win available.
 - **Translations.** The audience for this tool is global and largely non-English-speaking.
 - **A print-shop batch mode.** Apply one placement across a folder of PDFs at once.
 - **Booklet imposition** — proper saddle-stitch page ordering, folded and stapled in the middle.
@@ -162,6 +162,15 @@ Placement is computed in PDF user-space points (1 pt = 1/72 in) and converted to
 for display. Rotation is applied about the box anchor with the offset compensation PDF requires, so
 a rotated placement occupies exactly the footprint drawn on screen — verified for all four angles by
 replaying the transform matrices out of the exported file.
+
+Blank-area detection reduces the rendered page to a coarse grid of "has ink / is empty" cells and
+finds the largest all-empty rectangle with the standard largest-rectangle-in-a-histogram sweep,
+claiming each result and repeating to collect further candidates. The page background is taken to be
+whichever colour the page uses most, so it works on cream forms, coloured letterhead and scans
+rather than assuming white paper; a cell needs more than one differing pixel to count as ink, which
+keeps scanner speckle from swallowing an otherwise empty area. Candidates are judged on the size you
+actually get *after* the 2 mm safety inset, so no result is narrower than it claims. Typical page:
+under 100 ms.
 
 For manual duplex, sheet *i* carries page *2i* on the front and *2i+1* on the back. The back list is
 always padded to one entry per sheet, which is what stops odd-length documents drifting out of
