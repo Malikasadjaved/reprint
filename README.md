@@ -123,33 +123,35 @@ nothing to configure.
 
 ## Ideas for what to add next
 
-Ordered roughly by how much they'd help a typical user versus how much work they are. Pull requests
-very welcome — pick any one.
+Every item below is an open issue with the reasoning and a starting point written out. Pick any one —
+pull requests very welcome.
 
-**High value, small effort**
+**Good first issues**
 
-- **Save and reload placements.** Most people reprint the *same* form every month. Export the box
-  position as a small `.json` preset and load it next time instead of re-dragging.
-- **Drag-and-drop files** onto the window, instead of the Choose File buttons.
-- **N-up printing** — 2 or 4 pages per sheet, to halve the paper.
-- **Merge and reorder** — a general page organiser, since people already have the file open.
-- **Snap to the page edges and to the other content** while dragging.
-- **Undo/redo** for placement changes.
+- [#1 Save and reload placement presets](https://github.com/Malikasadjaved/reprint/issues/1) — most
+  people reprint the *same* form every month; a preset turns six steps into two.
+- [#2 Accept files by drag-and-drop](https://github.com/Malikasadjaved/reprint/issues/2)
+- [#3 Snap the box to page edges and margins](https://github.com/Malikasadjaved/reprint/issues/3)
+- [#4 Undo and redo](https://github.com/Malikasadjaved/reprint/issues/4)
+- [#13 Opacity and blend control for watermarks](https://github.com/Malikasadjaved/reprint/issues/13)
+- [#9 Translations](https://github.com/Malikasadjaved/reprint/issues/9) — **you do not need to write
+  code for this one.** Translated interface strings are a real contribution.
 
-**High value, more effort**
+**Bigger pieces**
 
-- **Translations.** The audience for this tool is global and largely non-English-speaking.
-- **A print-shop batch mode.** Apply one placement across a folder of PDFs at once.
-- **Booklet imposition** — proper saddle-stitch page ordering, folded and stapled in the middle.
-- **Fill-in fields.** Type text directly onto the page instead of supplying a second PDF, which
-  covers the very common "add a signature, a date, a stamp or a reference number" case.
-- **A progressive web app** so it installs like a normal program and opens offline by default.
-
-**Nice to have**
-
-- Overlay more than one piece of content per page.
-- Opacity and blend control for watermarks.
-- A command-line version for servers and batch jobs.
+- [#7 Type text directly onto the page](https://github.com/Malikasadjaved/reprint/issues/7) —
+  probably the most common real request: add a date, a signature, a stamp or a reference number
+  without having to make a second PDF first.
+- [#5 N-up printing](https://github.com/Malikasadjaved/reprint/issues/5) — 2 or 4 pages per sheet.
+- [#6 Merge, reorder and delete pages](https://github.com/Malikasadjaved/reprint/issues/6) — the
+  most-searched PDF task there is, and doing it without uploading your file is a better offer than
+  the incumbents.
+- [#8 Booklet imposition](https://github.com/Malikasadjaved/reprint/issues/8) — saddle-stitch
+  ordering for folded, stapled booklets.
+- [#10 Install as an app and work offline](https://github.com/Malikasadjaved/reprint/issues/10)
+- [#11 Batch mode across many PDFs](https://github.com/Malikasadjaved/reprint/issues/11)
+- [#12 More than one piece of content per page](https://github.com/Malikasadjaved/reprint/issues/12)
+- [#14 A command-line version](https://github.com/Malikasadjaved/reprint/issues/14)
 
 ---
 
@@ -187,7 +189,15 @@ alignment when the stack order is reversed.
 ## Contributing
 
 Issues and pull requests are welcome, including from people who are not programmers: a clear bug
-report saying which printer did what is genuinely useful.
+report saying which printer did what is genuinely useful, and so is a translation.
+
+Start with the [good first issues](https://github.com/Malikasadjaved/reprint/labels/good%20first%20issue).
+Each one explains why it matters, where in `index.html` to look, and what "done" means.
+
+One convention worth keeping: the page-ordering and placement logic is verified by building
+documents whose pages are labelled with their own number, running the operation, and reading the
+labels back out of the result. If you change either, please verify it that way rather than by eye —
+a duplex bug is invisible until someone has wasted 200 sheets of paper.
 
 ## Author
 
