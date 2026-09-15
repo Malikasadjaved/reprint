@@ -64,5 +64,3 @@ body:
         - label: It works without sending the user's document anywhere
         - label: A non-technical person could use it
         - label: It doesn't need a build step or a new dependency
-    validations:
-      required: false
