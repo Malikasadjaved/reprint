@@ -1,0 +1,109 @@
+name: Something printed wrong
+description: The pages came out in the wrong order, upside down, or in the wrong place on the paper
+title: "Printed wrong: "
+labels: ["bug", "printing"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Sorry — and thank you for reporting it.
+
+        Printers differ enormously in how they re-feed paper, and Reprint cannot detect that on its
+        own. Your answers here often help other people with the same printer, so nothing you write
+        is wasted.
+
+        **You do not need to answer every question.** Fill in what you know.
+
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Which part of Reprint were you using?
+      options:
+        - Adding content to an already-printed page
+        - Printing both sides (manual duplex)
+        - Not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What came out of the printer?
+      description: Describe it as you would to a colleague standing next to you.
+      placeholder: |
+        e.g. The back of every sheet was upside down.
+        e.g. Page 2 printed on the back of page 5 instead of page 1.
+        e.g. The content landed about 1 cm too far to the left.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect instead?
+    validations:
+      required: false
+
+  - type: input
+    id: printer
+    attributes:
+      label: Printer make and model
+      description: Usually printed on the front of the machine.
+      placeholder: e.g. HP LaserJet Pro M404dn, Canon PIXMA G3020, Epson L3250
+    validations:
+      required: false
+
+  - type: dropdown
+    id: settings
+    attributes:
+      label: For duplex, which settings did you choose?
+      multiple: true
+      options:
+        - Reverse order
+        - Same order
+        - Long edge
+        - Short edge
+        - I did not change them from the defaults
+    validations:
+      required: false
+
+  - type: dropdown
+    id: feed-test
+    attributes:
+      label: Did you run the 2-page feed test first?
+      description: The button in the duplex tab that tells you how your printer re-feeds paper.
+      options:
+        - "Yes, and I used the settings it indicated"
+        - "Yes, but the result was unclear"
+        - "No"
+    validations:
+      required: false
+
+  - type: input
+    id: pages
+    attributes:
+      label: How many pages was the document?
+      description: Odd and even page counts take different paths through the code, so this matters.
+      placeholder: e.g. 7 pages
+    validations:
+      required: false
+
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and operating system
+      placeholder: e.g. Chrome 140 on Windows 11
+    validations:
+      required: false
+
+  - type: textarea
+    id: anything-else
+    attributes:
+      label: Anything else
+      description: |
+        A photo of the misprinted sheet is genuinely useful — drag it in here.
+
+        **Please do not attach a document with personal or confidential information in it.** If the
+        problem only happens with one particular file, say so and we will work out another way.
+    validations:
+      required: false

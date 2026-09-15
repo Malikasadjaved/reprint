@@ -1,0 +1,68 @@
+name: Feature request
+description: Suggest something Reprint should be able to do
+title: "Feature: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Have a look at the [open issues](https://github.com/Malikasadjaved/reprint/issues) first —
+        quite a lot is already planned and written up.
+
+        The most useful thing you can tell us is **the real situation you're in**, not the feature
+        you think would solve it. The problem usually suggests a better solution than the one either
+        of us had in mind.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you actually trying to do?
+      description: Describe the real task, including the boring details.
+      placeholder: |
+        e.g. Every month I print 300 payslips and have to stamp the company logo in the top-right
+        corner of each one. I currently do it by hand in another program, one file at a time.
+    validations:
+      required: true
+
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would you like Reprint to do about it?
+    validations:
+      required: false
+
+  - type: textarea
+    id: workaround
+    attributes:
+      label: How do you handle it today?
+      description: Including "I don't, I just accept it" — that's useful to know.
+    validations:
+      required: false
+
+  - type: dropdown
+    id: frequency
+    attributes:
+      label: How often does this come up for you?
+      options:
+        - Every day
+        - Every week
+        - Every month
+        - A few times a year
+        - Once, but it was painful
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: principles
+    attributes:
+      label: Does it fit what Reprint is trying to be?
+      description: |
+        See [CONTRIBUTING.md](https://github.com/Malikasadjaved/reprint/blob/main/CONTRIBUTING.md).
+        Tick what applies — an honest "no" here doesn't disqualify an idea, it just means we should
+        talk about it.
+      options:
+        - label: It works without sending the user's document anywhere
+        - label: A non-technical person could use it
+        - label: It doesn't need a build step or a new dependency
+    validations:
+      required: false

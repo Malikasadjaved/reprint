@@ -191,13 +191,15 @@ alignment when the stack order is reversed.
 Issues and pull requests are welcome, including from people who are not programmers: a clear bug
 report saying which printer did what is genuinely useful, and so is a translation.
 
-Start with the [good first issues](https://github.com/Malikasadjaved/reprint/labels/good%20first%20issue).
-Each one explains why it matters, where in `index.html` to look, and what "done" means.
+**[CONTRIBUTING.md](CONTRIBUTING.md)** covers what Reprint is trying to be, how to set up (clone it
+and open the file — that's all), and how to verify a change properly. Start with the
+[good first issues](https://github.com/Malikasadjaved/reprint/labels/good%20first%20issue); each one
+explains why it matters, where in `index.html` to look, and what "done" means.
 
-One convention worth keeping: the page-ordering and placement logic is verified by building
-documents whose pages are labelled with their own number, running the operation, and reading the
-labels back out of the result. If you change either, please verify it that way rather than by eye —
-a duplex bug is invisible until someone has wasted 200 sheets of paper.
+One convention worth knowing before you touch anything: the page-ordering and placement logic is
+verified by building documents whose pages are labelled with their own number, running the
+operation, and reading the labels back out of the result — not by eye. A duplex bug is invisible
+until someone has wasted 200 sheets of paper. There's a copy-paste console snippet in CONTRIBUTING.
 
 ## Author
 

@@ -1,0 +1,78 @@
+name: Bug report
+description: Something in the tool itself is broken — a file won't load, a button does nothing, the preview is wrong
+title: "Bug: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        If the problem is that **something came out of the printer wrong**, please use the
+        *Something printed wrong* template instead — it asks the right questions for that.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+    validations:
+      required: false
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Opened index.html
+        2. Chose a base page
+        3. Clicked "Find the blank area for me"
+        4. Nothing happened
+    validations:
+      required: true
+
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and operating system
+      placeholder: e.g. Firefox 141 on Ubuntu 24.04
+    validations:
+      required: true
+
+  - type: dropdown
+    id: how-opened
+    attributes:
+      label: How are you running Reprint?
+      options:
+        - From the live site (malikasadjaved.github.io/reprint)
+        - Opened index.html from my own computer
+        - Hosted it myself somewhere else
+    validations:
+      required: false
+
+  - type: textarea
+    id: console
+    attributes:
+      label: Any errors in the browser console?
+      description: |
+        Optional, and skip it if you're not sure how. Press F12, choose the Console tab, reproduce
+        the problem, and paste anything red that appears.
+      render: text
+    validations:
+      required: false
+
+  - type: textarea
+    id: file
+    attributes:
+      label: What kind of file were you using?
+      description: |
+        Size, page count, whether it was a scan, whether it came from Word, a phone, or a scanner.
+
+        **Please don't attach confidential documents.** If a specific file is needed to reproduce
+        the problem, say so and we'll find another way.
+    validations:
+      required: false

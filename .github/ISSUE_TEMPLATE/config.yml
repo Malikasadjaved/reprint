@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: How to use Reprint
+    url: https://github.com/Malikasadjaved/reprint#for-everyone-the-simplest-possible-way-to-use-this
+    about: Step-by-step instructions in plain language, before you file anything.
+  - name: Try it in your browser
+    url: https://malikasadjaved.github.io/reprint/
+    about: Nothing to install. Your files never leave your computer.
